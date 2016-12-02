@@ -37,14 +37,19 @@ def file_path(o, j):
     comps = str()
     for k in sorted(o.components):
         comps = ''.join([comps, k[0: 5], '_'])
-    fname = ''.join([o.output_prefix, comps,  str(o.output_frequency[j]).replace('.', 'p'), '_', str(o.nside), '.fits'])
+    fname = ''.join([o.output_prefix, comps,
+                     str(o.output_frequency[j]).replace('.', 'p'),
+                     '_', str(o.nside), '.fits'])
+
     path = os.path.join(o.output_dir, fname)
     return path
 
 
 def write_output_single(sky_freq, o, Config, i):
     path = file_path(o, i)
-    hp.write_map(path, hp.ud_grade(sky_freq, nside_out=o.nside), coord='G', column_units=''.join(o.output_units), column_names=None, extra_header=config2list(Config, o, i))
+    hp.write_map(path, hp.ud_grade(sky_freq, nside_out=o.nside),
+                 coord='G', column_units=''.join(o.output_units),
+                 column_names=None, extra_header=config2list(Config, o, i))
 
 
 def config2list(config, o, i):
@@ -52,7 +57,8 @@ def config2list(config, o, i):
 
     exclude = ['__name__', 'output_frequency', 'instrument_noise',
                'instrument_noise_i', 'instrument_noise_pol', 'smoothing',
-               'fwhm', 'bandpass', 'bandpass_widths', 'instrument_noise_seed', 'output_dir']
+               'fwhm', 'bandpass', 'bandpass_widths', 'instrument_noise_seed',
+               'output_dir']
 
     for f in config.sections():
         info += config._sections[f].items()
@@ -75,10 +81,11 @@ def config2list(config, o, i):
     if o.instrument_noise:
         info += [('instrument_noise_i', o.instrument_noise_i[i], 'uK_CMB amin'),
                  ('instrument_noise_pol', o.instrument_noise_pol[i], 'uK_CMB amin'),
-                  ('instrument_noise_seed', o.instrument_noise_seed)]
+                 ('instrument_noise_seed', o.instrument_noise_seed)]
 
     info = add_hierarch(info)
     return info
+
 
 def add_hierarch(lis):
     for i,  item in enumerate(lis):
@@ -89,13 +96,17 @@ def add_hierarch(lis):
 
     return lis
 
-def read_map_wrapped(fname, nside_out, field=0):
-    return hp.ud_grade(np.array(hp.read_map(fname, field=field, verbose=False)), nside_out=nside_out)
-# Switch to this if you don't want to ud_grade on input
-#    return hp.read_map(fname, field=field, verbose=False)
+
+def read_map_wrapped(fname, nside=None, field=0):
+    map_data = np.array(hp.read_map(fname, field=field, verbose=False))
+    if nside is not None:
+        map_data = hp.ud_grade(map_data, nside_out=nside)
+
+    return map_data
+
 
 class component(object):
-    def __init__(self, cdict, nside_out):
+    def __init__(self, cdict, nside):
         keys = cdict.keys()
         if 'pol' in keys:
             self.pol = cdict['pol']
@@ -104,13 +115,15 @@ class component(object):
             self.spectral_model = cdict['spectral_model']
 
         if 'em_template' in keys:
-            self.em_template = read_map_wrapped(cdict['em_template'], nside_out)
+            self.em_template = read_map_wrapped(cdict['em_template'], nside)
 
         if 'beta_template' in keys:
-            self.beta_template = read_map_wrapped(cdict['beta_template'], nside_out)
+            self.beta_template = read_map_wrapped(cdict['beta_template'],
+                                                  nside)
 
         if 'temp_template' in keys:
-            self.temp_template = read_map_wrapped(cdict['temp_template'], nside_out)
+            self.temp_template = read_map_wrapped(cdict['temp_template'],
+                                                  nside)
 
         if 'freq_curve' in keys:
             self.freq_curve = float(cdict['freq_curve'])
@@ -119,10 +132,12 @@ class component(object):
             self.beta_curve = float(cdict['beta_curve'])
 
         if 'polq_em_template' in keys:
-            self.polq_em_template = read_map_wrapped(cdict['polq_em_template'], nside_out)
+            self.polq_em_template = read_map_wrapped(cdict['polq_em_template'],
+                                                     nside)
 
         if 'polu_em_template' in keys:
-            self.polu_em_template = read_map_wrapped(cdict['polu_em_template'], nside_out)
+            self.polu_em_template = read_map_wrapped(cdict['polu_em_template'],
+                                                     nside)
 
         if 'freq_ref' in keys:
             self.freq_ref = float(cdict['freq_ref'])
@@ -131,7 +146,8 @@ class component(object):
             self.pol_freq_ref = float(cdict['pol_freq_ref'])
 
         if 'template_units' in keys:
-            self.template_units = [cdict['template_units'][0], cdict['template_units'][1:]]
+            self.template_units = [cdict['template_units'][0], \
+                                   cdict['template_units'][1:]]
 
         if 'output_dir' in keys:
             self.output_dir = cdict['output_dir']
@@ -145,7 +161,8 @@ class component(object):
         if 'compute_lensed_cmb' in keys:
             self.compute_lensed_cmb = 'True' in cdict['compute_lensed_cmb']
             if self.compute_lensed_cmb is False:
-                self.lensed_cmb = read_map_wrapped(cdict['lensed_cmb'], nside_out, field=(0, 1, 2))
+                self.lensed_cmb = read_map_wrapped(cdict['lensed_cmb'], nside,
+                                                   field=(0, 1, 2))
 
         if 'emissivity' in keys:
             self.emissivity = np.loadtxt(cdict['emissivity'], unpack=True)
@@ -154,16 +171,18 @@ class component(object):
             try:
                 self.freq_peak = float(cdict['freq_peak'])
             except ValueError:
-                self.freq_peak = read_map_wrapped(cdict['freq_peak'], nside_out)
+                self.freq_peak = read_map_wrapped(cdict['freq_peak'], nside)
 
         if 'peak_ref' in keys:
             self.peak_ref = float(cdict['peak_ref'])
 
         if 'thermaldust_polq' in keys:
-            self.thermaldust_polq = read_map_wrapped(cdict['thermaldust_polq'], nside_out)
+            self.thermaldust_polq = read_map_wrapped(cdict['thermaldust_polq'],
+                                                     nside)
 
         if 'thermaldust_polu' in keys:
-            self.thermaldust_polu = read_map_wrapped(cdict['thermaldust_polu'], nside_out)
+            self.thermaldust_polu = read_map_wrapped(cdict['thermaldust_polu'],
+                                                     nside)
 
         if 'pol_frac' in keys:
             self.pol_frac = float(cdict['pol_frac'])
@@ -172,13 +191,14 @@ class component(object):
             self.delens = 'True' in cdict['delens']
 
         if 'delensing_ells' in keys:
-            self.delensing_ells = np.loadtxt(cdict['delensing_ells'], unpack=True)
+            self.delensing_ells = np.loadtxt(cdict['delensing_ells'],
+                                             unpack=True)
 
         if 'ff_em_temp' in keys:
-            self.em = read_map_wrapped(cdict['ff_em_temp'], nside_out)
+            self.em = read_map_wrapped(cdict['ff_em_temp'], nside)
 
         if 'ff_te_temp' in keys:
-            self.te = read_map_wrapped(cdict['ff_te_temp'], nside_out)
+            self.te = read_map_wrapped(cdict['ff_te_temp'], nside)
 
 
 class output(object):
@@ -188,6 +208,7 @@ class output(object):
             self.debug = 'True' in config_dict['debug']
         else:
             self.debug = False
+
         self.components = [i for i in config_dict['components'].split()]
         self.output_frequency = [float(i) for i in config_dict['output_frequency'].split()]
         self.output_units = [config_dict['output_units'][0], config_dict['output_units'][1:]]
@@ -196,10 +217,12 @@ class output(object):
         self.bandpass = 'True' in config_dict['bandpass']
         self.bandpass_widths = [float(i) for i in config_dict['bandpass_widths'].split()]
         self.instrument_noise = 'True' in config_dict['instrument_noise']
+
         if config_dict['instrument_noise_seed'] == 'None':
             self.instrument_noise_seed = None
         else:
             self.instrument_noise_seed = int(config_dict['instrument_noise_seed'])
+
         self.instrument_noise_i = np.asarray([float(i) for i in config_dict['instrument_noise_i'].split()])
         self.instrument_noise_pol = np.asarray([float(i) for i in config_dict['instrument_noise_pol'].split()])
         self.smoothing = 'True' in config_dict['smoothing']
@@ -207,28 +230,33 @@ class output(object):
 
 
 def convert_units(u_from, u_to, freq):
-#freq in GHz
+    """Convert units (with freq in GHz)
+    """
     if u_from[0] not in units.keys():
         if u_to[0] not in units.keys():
-            return units[u_from[0] + u_from[1]](np.asarray(freq)) / units[u_to[0] + u_to[1]](np.asarray(freq))
+            return units[u_from[0] + u_from[1]](np.asarray(freq)) / \
+                   units[u_to[0] + u_to[1]](np.asarray(freq))
 
         else:
-            return units[u_from[0] + u_from[1]](np.asarray(freq)) / (units[u_to[0]] * units[u_to[1]](np.asarray(freq)))
+            return units[u_from[0] + u_from[1]](np.asarray(freq)) / \
+                   (units[u_to[0]] * units[u_to[1]](np.asarray(freq)))
 
     else:
         if u_to[0] not in units.keys():
-            return units[u_from[0]] * units[u_from[1]](np.asarray(freq)) / units[u_to[0] + u_to[1]](np.asarray(freq))
+            return units[u_from[0]] * units[u_from[1]](np.asarray(freq)) / \
+                   units[u_to[0] + u_to[1]](np.asarray(freq))
         else:
-            return units[u_from[0]] * units[u_from[1]](np.asarray(freq)) / (units[u_to[0]] * units[u_to[1]](np.asarray(freq)))
+            return units[u_from[0]] * units[u_from[1]](np.asarray(freq)) / \
+                   (units[u_to[0]] * units[u_to[1]](np.asarray(freq)))
 
 
 def scale_freqs(c, o, pol=None, samples=10.):
 #All scalings, other than the CMB, are done Rayleigh-Jeans units.
     freq = np.asarray(np.copy(o.output_frequency))
 
-    if pol == False:
+    if is False:
         freq_ref = np.copy(c.freq_ref)
-    if pol == True:
+    if else:
         freq_ref = np.copy(c.pol_freq_ref)
 
     if o.bandpass:
@@ -420,8 +448,12 @@ def offset_pos(ipos, dtheta, dphi, pol=False, geodesic=False):
         # Loop over chunks in order to conserve memory
         step = 0x10000
         for i in range(0, ipos.shape[1], step):
-            small_opos, small_orot = offset_pos_helper(ipos[:, i: i + step], dtheta[i: i + step], dphi[i: i + step], pol)
+            small_opos, small_orot = offset_pos_helper(ipos[:, i: i + step],
+                                                       dtheta[i: i + step],
+                                                       dphi[i: i + step], pol)
+
             opos[:, i: i + step] = small_opos
+
             if pol:
                 orot[:, i: i + step] = small_orot
 
