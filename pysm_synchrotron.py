@@ -1,15 +1,15 @@
 import numpy as np
 import healpy as hp
-from pysm import scale_freqs, convert_units, component, output
+import pysm as sm
 import ConfigParser
 
 def main(fname_config):
     Config = ConfigParser.ConfigParser()
     Config.read(fname_config)
-    out = output(Config._sections['GlobalParameters'])
+    out = sm.output(Config._sections['GlobalParameters'])
 
     Config.read('./ConfigFiles/'+Config.get('Synchrotron', 'model')+'_config.ini')
-    synch = component(Config._sections['Synchrotron'], out.nside)
+    synch = sm.Component(Config._sections['Synchrotron'], out.nside)
 
     with open(out.output_dir+out.output_prefix+'synchrotron_config.ini', 'w') as configfile:
         Config.write(configfile)
@@ -22,17 +22,17 @@ def main(fname_config):
 
     # The unit conversion takes care of the scaling being done in uK_RJ.
     # After scaling we convert to whatever the output units are.
-    conv_I = convert_units(synch.template_units, ['u', 'K_RJ'], synch.freq_ref)
-    conv_pol = convert_units(synch.template_units, ['u', 'K_RJ'], synch.pol_freq_ref)
-    conv2 = convert_units(['u', 'K_RJ'], out.output_units, out.output_frequency)
+    conv_I = sm.convert_units(synch.template_units, ['u', 'K_RJ'], synch.freq_ref)
+    conv_pol = sm.convert_units(synch.template_units, ['u', 'K_RJ'], synch.pol_freq_ref)
+    conv2 = sm.convert_units(['u', 'K_RJ'], out.output_units, out.output_frequency)
     unit_conversion_i = conv_I * conv2.reshape((len(out.output_frequency), 1))
     unit_conversion_pol = conv_pol * conv2.reshape((len(out.output_frequency), 1))
 
     # Do the scaling.
-    scaled_map_synch = scale_freqs(synch, out, pol=False) * \
+    scaled_map_synch = sm.scale_freqs(synch, out, pol=False) * \
                        synch.em_template * unit_conversion_i
 
-    scaled_map_synch_pol = scale_freqs(synch, out, pol=True)[np.newaxis, ...] * \
+    scaled_map_synch_pol = sm.scale_freqs(synch, out, pol=True)[np.newaxis, ...] * \
                            np.array([synch.polq_em_template, synch.polu_em_template])[:, np.newaxis, :] * unit_conversion_pol
 
     # This section forces P/I<0.75. This is done using the same procedure as the PSM 1.7.8 psm_synchrotron.pro.

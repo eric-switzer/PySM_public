@@ -1,31 +1,31 @@
 import numpy as np
 import healpy as hp
 import ConfigParser
-from pysm import scale_freqs, convert_units, output, component
+import pysm as sm
 
 def scale_dust_pop(pop, out, Config):
-    dust = component(Config._sections[pop], out.nside)
+    dust = sm.Component(Config._sections[pop], out.nside)
     print('Computing dust maps.')
     print '----------------------------------------------------- \n'
     if out.debug is True:
         print ''.join("%s: %s \n" % item   for item in vars(dust).items())
         print '----------------------------------------------------- \n'
 
-    conv_i = convert_units(dust.template_units, ['u', 'K_RJ'], dust.freq_ref)
+    conv_i = sm.convert_units(dust.template_units, ['u', 'K_RJ'], dust.freq_ref)
 
-    conv_pol = convert_units(dust.template_units, ['u', 'K_RJ'],
+    conv_pol = sm.convert_units(dust.template_units, ['u', 'K_RJ'],
                              dust.pol_freq_ref)
 
-    conv2 = convert_units(['u', 'K_RJ'], out.output_units,
+    conv2 = sm.convert_units(['u', 'K_RJ'], out.output_units,
                           out.output_frequency)
 
     unit_conversion_I = conv_i * conv2.reshape((len(out.output_frequency), 1))
     unit_conversion_pol = conv_pol * conv2.reshape((len(out.output_frequency), 1))
 
-    scaled_map_dust = scale_freqs(dust, out, pol=False) * dust.em_template * \
+    scaled_map_dust = sm.scale_freqs(dust, out, pol=False) * dust.em_template * \
                       unit_conversion_I
 
-    scaled_map_dust_pol = scale_freqs(dust, out, pol=True)[np.newaxis, ...] * \
+    scaled_map_dust_pol = sm.scale_freqs(dust, out, pol=True)[np.newaxis, ...] * \
                           np.array([dust.polq_em_template, dust.polu_em_template])[:, np.newaxis, :]*unit_conversion_pol
 
     if out.debug is True:
@@ -50,7 +50,7 @@ def main(fname_config):
     Config_model = ConfigParser.ConfigParser()
 
     Config.read(fname_config)
-    out = output(Config._sections['GlobalParameters'])
+    out = sm.output(Config._sections['GlobalParameters'])
 
     Config_model.read('./ConfigFiles/' + Config.get('ThermalDust', 'model') + '_config.ini')
     pops = Config_model.sections()

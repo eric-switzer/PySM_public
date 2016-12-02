@@ -2,15 +2,17 @@
 'Lensing simulations by Taylor expansion - not so inefficient after all'
 Journal of Cosmology and Astroparticle Physics September 2013 Available at:
 https://github.com/amaurea/taylens """
-import numpy as np import healpy as hp
-from pysm import * import ConfigParser
+import ConfigParser
+import numpy as np
+import healpy as hp
+from pysm import *
 
 def main(fname_config):
     Config = ConfigParser.ConfigParser()
     Config.read(fname_config)
     out = output(Config._sections['GlobalParameters'])
     Config.read('./ConfigFiles/' + Config.get('CMB', 'model') + '_config.ini')
-    CMB = component(Config._sections['CMB'], out.nside)
+    CMB = Component(Config._sections['CMB'], out.nside)
 
     with open(out.output_dir + out.output_prefix + 'cmb_config.ini', 'w') as configfile:
         Config.write(configfile)

@@ -255,7 +255,7 @@ def convert_units(u_from, u_to, freq):
                    (units[u_to[0]] * units[u_to[1]](np.asarray(freq)))
 
 
-def scale_freqs(c, o, pol=None, samples=10.):
+def scale_freqs(c, o, pol=False, samples=10.):
     """
     All scalings, other than the CMB, are done Rayleigh-Jeans units.
     """
@@ -287,7 +287,7 @@ def scale_freqs(c, o, pol=None, samples=10.):
         if not o.bandpass:
             return (freq[..., np.newaxis] / freq_ref) ** (c.beta_template + c.beta_curve * np.log(freq[..., np.newaxis] / c.freq_curve))
         else:
-            return (1. / freq_cen ** 2)[..., np.newaxis] * np.sum((freq ** 2)[..., np.newaxis] * (freq[..., np.newaxis] / c.freq_ref) ** (c.beta_template + c.beta_curve * np.log(freq[..., np.newaxis] / c.freq_curve)), axis=np.ndim(freq) - 1) / samples
+            return (1. / freq_cen ** 2)[..., np.newaxis] * np.sum((freq ** 2)[..., np.newaxis] * (freq[..., np.newaxis] / freq_ref) ** (c.beta_template + c.beta_curve * np.log(freq[..., np.newaxis] / c.freq_curve)), axis=np.ndim(freq) - 1) / samples
 
     if c.spectral_model == "powerlaw":
         if not o.bandpass:
@@ -313,18 +313,18 @@ def scale_freqs(c, o, pol=None, samples=10.):
 
         J = interp1d(c.emissivity[0], c.emissivity[1], bounds_error=False, fill_value=0)
         arg1 = freq[..., np.newaxis] * c.peak_ref / c.freq_peak
-        arg2 = c.freq_ref * c.peak_ref / c.freq_peak
+        arg2 = freq_ref * c.peak_ref / c.freq_peak
 
         if not o.bandpass:
-            return ((c.freq_ref / freq) ** 2)[..., np.newaxis] * (J(arg1) / J(arg2))
+            return ((freq_ref / freq) ** 2)[..., np.newaxis] * (J(arg1) / J(arg2))
         else:
-            return (1. / freq_cen ** 2)[..., np.newaxis] * np.sum((freq ** 2)[..., np.newaxis] * ((c.freq_ref / freq) ** 2)[..., np.newaxis] * (J(arg1) / J(arg2)),  axis=np.ndim(freq) - 1) / samples
+            return (1. / freq_cen ** 2)[..., np.newaxis] * np.sum((freq ** 2)[..., np.newaxis] * ((freq_ref / freq) ** 2)[..., np.newaxis] * (J(arg1) / J(arg2)),  axis=np.ndim(freq) - 1) / samples
 
     if c.spectral_model == "freefree":
         if not o.bandpass:
-            return (freq[..., np.newaxis] / c.freq_ref) ** -2.14
+            return (freq[..., np.newaxis] / freq_ref) ** -2.14
         else:
-            return (1 / freq_cen ** 2)[..., np.newaxis] * np.sum((freq ** 2)[..., np.newaxis] * ((c.freq_ref / freq) ** 2)[..., np.newaxis] * (freq[..., np.newaxis] / c.freq_ref) ** -2.14,  axis=np.ndim(freq) - 1) / samples
+            return (1 / freq_cen ** 2)[..., np.newaxis] * np.sum((freq ** 2)[..., np.newaxis] * ((freq_ref / freq) ** 2)[..., np.newaxis] * (freq[..., np.newaxis] / freq_ref) ** -2.14,  axis=np.ndim(freq) - 1) / samples
 
     else:
         print('No law selected')
