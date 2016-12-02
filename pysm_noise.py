@@ -7,9 +7,9 @@ import pysm as sm
 
 
 def instrument_noise(fname_config):
-    Config = ConfigParser.ConfigParser()
-    Config.read(fname_config)
-    out = sm.output(Config._sections['GlobalParameters'])
+    config = ConfigParser.ConfigParser()
+    config.read(fname_config)
+    out = sm.Output(config._sections['GlobalParameters'])
 
     print('Adding instrument noise.')
     print '----------------------------------------------------- \n'
@@ -41,4 +41,5 @@ def instrument_noise(fname_config):
     instrument_noise[2, ...] = sigma_pix_pol[np.newaxis, :, np.newaxis] * \
                                instrument_noise[2, ...]
 
-    return instrument_noise * sm.convert_units(['u', 'K_CMB'], out.output_units, out.output_frequency)[np.newaxis, :, np.newaxis]
+    return instrument_noise * sm.convert_units(['u', 'K_CMB'],
+           out.output_units, out.output_frequency)[np.newaxis, :, np.newaxis]

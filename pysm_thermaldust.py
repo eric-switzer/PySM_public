@@ -3,8 +3,8 @@ import healpy as hp
 import ConfigParser
 import pysm as sm
 
-def scale_dust_pop(pop, out, Config):
-    dust = sm.Component(Config._sections[pop], out.nside)
+def scale_dust_pop(pop, out, config):
+    dust = sm.Component(config._sections[pop], out.nside)
     print('Computing dust maps.')
     print '----------------------------------------------------- \n'
     if out.debug is True:
@@ -46,22 +46,22 @@ def scale_dust_pop(pop, out, Config):
 
 def main(fname_config):
     """Read configuration into classes"""
-    Config = ConfigParser.ConfigParser()
-    Config_model = ConfigParser.ConfigParser()
+    config = ConfigParser.ConfigParser()
+    config_model = ConfigParser.ConfigParser()
 
-    Config.read(fname_config)
-    out = sm.output(Config._sections['GlobalParameters'])
+    config.read(fname_config)
+    out = sm.Output(config._sections['GlobalParameters'])
 
-    Config_model.read('./ConfigFiles/' + Config.get('ThermalDust', 'model') + '_config.ini')
-    pops = Config_model.sections()
+    config_model.read('./ConfigFiles/' + config.get('ThermalDust', 'model') + '_config.ini')
+    pops = config_model.sections()
 
     cfg_fname = out.output_dir + out.output_prefix + 'thermaldust_config.ini'
     with open(cfg_fname, 'w') as configfile:
-        Config_model.write(configfile)
+        config_model.write(configfile)
 
     dust_out = 0.
 
     for p in pops:
-        dust_out += scale_dust_pop(p, out, Config_model)
+        dust_out += scale_dust_pop(p, out, config_model)
 
     return dust_out

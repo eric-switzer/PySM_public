@@ -206,7 +206,7 @@ class Component(object):
             self.te = read_map_wrapped(cdict['ff_te_temp'], nside)
 
 
-class output(object):
+class Output(object):
     def __init__(self, config_dict):
         self.output_prefix = config_dict['output_prefix']
         if 'debug' in config_dict:
@@ -261,10 +261,14 @@ def scale_freqs(c, o, pol=False, samples=10.):
     """
     freq = np.asarray(np.copy(o.output_frequency))
 
-    if pol is False:
-        freq_ref = np.copy(c.freq_ref)
-    else:
-        freq_ref = np.copy(c.pol_freq_ref)
+    # Clean up this logic
+    try:
+        if pol is False:
+            freq_ref = np.copy(c.freq_ref)
+        else:
+            freq_ref = np.copy(c.pol_freq_ref)
+    except AttributeError:
+        freq_ref = None
 
     if o.bandpass:
         widths = np.asarray([np.linspace(-(samples - 1.) * w / (samples * 2.),
