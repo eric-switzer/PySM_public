@@ -1,11 +1,13 @@
+"""
+Python sky model: main library
+"""
+import os
 import sys
 import time
 import numpy as np
-import scipy as sp
 import healpy as hp
 from scipy.misc import factorial, comb
 from scipy.interpolate import interp1d
-import os
 
 constants = {
     'T_CMB': 2.7255,
@@ -146,7 +148,7 @@ class component(object):
             self.pol_freq_ref = float(cdict['pol_freq_ref'])
 
         if 'template_units' in keys:
-            self.template_units = [cdict['template_units'][0], \
+            self.template_units = [cdict['template_units'][0],
                                    cdict['template_units'][1:]]
 
         if 'output_dir' in keys:
@@ -251,16 +253,21 @@ def convert_units(u_from, u_to, freq):
 
 
 def scale_freqs(c, o, pol=None, samples=10.):
-#All scalings, other than the CMB, are done Rayleigh-Jeans units.
+    """
+    All scalings, other than the CMB, are done Rayleigh-Jeans units.
+    """
     freq = np.asarray(np.copy(o.output_frequency))
 
-    if is False:
+    if pol is False:
         freq_ref = np.copy(c.freq_ref)
-    if else:
+    else:
         freq_ref = np.copy(c.pol_freq_ref)
 
     if o.bandpass:
-        widths = np.asarray([np.linspace(-(samples - 1.) * w / (samples * 2.), (samples - 1) * w / (samples * 2.), num=samples) for w in o.bandpass_widths])
+        widths = np.asarray([np.linspace(-(samples - 1.) * w / (samples * 2.),
+                                         (samples - 1) * w / (samples * 2.),
+                                         num=samples) for w in o.bandpass_widths])
+
         freq = freq[..., np.newaxis] + widths
         freq_cen = np.asarray(np.copy(o.output_frequency))
 
@@ -321,8 +328,10 @@ def scale_freqs(c, o, pol=None, samples=10.):
         print('No law selected')
         exit()
 
-#The following code is edited from the taylens code: Naess, S. K. and Louis, T. 2013 'Lensing simulations by Taylor expansion -  not so inefficient after all'  Journal of Cosmology and Astroparticle Physics September 2013
-#Available at: https://github.com/amaurea/taylens
+# The following code is edited from the taylens code: Naess, S. K. and Louis,
+# T. 2013 'Lensing simulations by Taylor expansion -  not so inefficient after
+# all'  Journal of Cosmology and Astroparticle Physics September 2013
+# Available at: https://github.com/amaurea/taylens
 
 # This generates correlated T,E,B and Phi maps
 def simulate_tebp_correlated(cl_tebp_arr, nside, lmax, seed):
@@ -330,7 +339,7 @@ def simulate_tebp_correlated(cl_tebp_arr, nside, lmax, seed):
     alms = hp.synalm(cl_tebp_arr, lmax=lmax, new=True)
     aphi = alms[-1]
     acmb = alms[0:-1]
-    #Set to zero above map resolution to avoid aliasing
+    # Set to zero above map resolution to avoid aliasing
     beam_cut = np.ones(3 * nside)
     for ac in acmb:
         hp.almxfl(ac, beam_cut, inplace=True)
@@ -421,9 +430,9 @@ def readspec(fname):
     into a 2d array indexed by l. Entries with missing data are
     filled with 0."""
     tmp = np.loadtxt(fname).T
-    l, tmp = tmp[0], tmp[1:]
-    res = np.zeros((len(tmp), np.max(l) + 1))
-    res[:, np.array(l, dtype=int)] = tmp
+    ell, tmp = tmp[0], tmp[1:]
+    res = np.zeros((len(tmp), np.max(ell) + 1))
+    res[:, np.array(ell, dtype=int)] = tmp
     return res
 
 
