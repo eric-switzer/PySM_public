@@ -31,16 +31,19 @@ units = {
 
 
 def condense_list(models):
+    """Take a model list condense into names
+    """
     mod_names = [f[1] for f in models]
     return [(f[0], ' '.join(mod_names))]
 
 
-def file_path(o, j):
+def file_path(o, freq_index):
     comps = str()
     for k in sorted(o.components):
         comps = ''.join([comps, k[0: 5], '_'])
+
     fname = ''.join([o.output_prefix, comps,
-                     str(o.output_frequency[j]).replace('.', 'p'),
+                     str(o.output_frequency[freq_index]).replace('.', 'p'),
                      '_', str(o.nside), '.fits'])
 
     path = os.path.join(o.output_dir, fname)
@@ -90,7 +93,7 @@ def config2list(config, o, i):
 
 
 def add_hierarch(lis):
-    for i,  item in enumerate(lis):
+    for i, item in enumerate(lis):
         if len(item) == 3:
             lis[i] = ('HIERARCH ' + item[0], item[1], item[2])
         else:
@@ -107,7 +110,7 @@ def read_map_wrapped(fname, nside=None, field=0):
     return map_data
 
 
-class component(object):
+class Component(object):
     def __init__(self, cdict, nside):
         keys = cdict.keys()
         if 'pol' in keys:
@@ -271,15 +274,14 @@ def scale_freqs(c, o, pol=None, samples=10.):
         freq = freq[..., np.newaxis] + widths
         freq_cen = np.asarray(np.copy(o.output_frequency))
 
-    #Note that the frequencies within a bandwidth are stored in the second
-    #dimension of the frequency array.  When we sum over the final produce of each
-    #power law we therefore specify the ndim(freq)-1 dimension. Freq has two
-    #dimensions at this point and so ndim(freq)-1 = 1.  Axis indexing starts at 0.
-    #So this gives us the correct summation.
-
-    #Note that the bandpass has to be done in non-thermodynamic units, so there are
-    #factors of frequency squared inside and outside the integral to account for
-    #switching between the two unit systems.
+    # Note that the frequencies within a bandwidth are stored in the second
+    # dimension of the frequency array.  When we sum over the final produce of
+    # each power law we therefore specify the ndim(freq)-1 dimension. Freq has
+    # two dimensions at this point and so ndim(freq)-1 = 1.  Axis indexing
+    # starts at 0. So this gives us the correct summation.
+    # Note that the bandpass has to be done in non-thermodynamic units, so
+    # there are factors of frequency squared inside and outside the integral to
+    #  account for switching between the two unit systems.
 
     if c.spectral_model == "curvedpowerlaw":
         if not o.bandpass:
@@ -326,7 +328,7 @@ def scale_freqs(c, o, pol=None, samples=10.):
 
     else:
         print('No law selected')
-        exit()
+        raise ValueError
 
 # The following code is edited from the taylens code: Naess, S. K. and Louis,
 # T. 2013 'Lensing simulations by Taylor expansion -  not so inefficient after
