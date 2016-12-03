@@ -4,7 +4,7 @@ import os
 import argparse
 import ConfigParser
 import pysm_synchrotron, pysm_thermaldust, pysm_cmb, pysm_spinningdust, pysm_noise, pysm_freefree
-from pysm import output, config2list, file_path, write_output_single
+from pysm import Output, config2list, file_path, write_output_single
 import healpy as hp
 import numpy as np
 
@@ -16,7 +16,7 @@ def main():
     # Get the output directory and save the configuration file.
     Config = ConfigParser.ConfigParser()
     Config.read(parser.parse_args().config_file)
-    out = output(Config._sections['GlobalParameters'])
+    out = Output(Config._sections['GlobalParameters'])
 
     if not os.path.exists(out.output_dir):
         os.makedirs(out.output_dir)

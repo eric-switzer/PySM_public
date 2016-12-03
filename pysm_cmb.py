@@ -5,17 +5,18 @@ https://github.com/amaurea/taylens """
 import ConfigParser
 import numpy as np
 import healpy as hp
-from pysm import *
+import pysm as sm
+
 
 def main(fname_config):
-    Config = ConfigParser.ConfigParser()
-    Config.read(fname_config)
-    out = output(Config._sections['GlobalParameters'])
-    Config.read('./ConfigFiles/' + Config.get('CMB', 'model') + '_config.ini')
-    CMB = Component(Config._sections['CMB'], out.nside)
+    config = ConfigParser.ConfigParser()
+    config.read(fname_config)
+    out = sm.Output(config._sections['GlobalParameters'])
+    config.read('./ConfigFiles/' + config.get('CMB', 'model') + '_config.ini')
+    CMB = sm.Component(config._sections['CMB'], out.nside)
 
     with open(out.output_dir + out.output_prefix + 'cmb_config.ini', 'w') as configfile:
-        Config.write(configfile)
+        config.write(configfile)
 
     print 'Computing CMB maps.'
     print '----------------------------------------------------- \n'
@@ -61,7 +62,7 @@ def main(fname_config):
         ipos = np.array(hp.pix2ang(out.nside, np.arange(12 * (out.nside ** 2))))
 
         # Simulate a CMB and lensing field
-        cmb, aphi = simulate_tebp_correlated(cl_tebp_arr, out.nside, synlmax, CMB.cmb_seed)
+        cmb, aphi = sm.simulate_tebp_correlated(cl_tebp_arr, out.nside, synlmax, CMB.cmb_seed)
 
         if cmb.ndim == 1:
             cmb = np.reshape(cmb, [1, cmb.size])
@@ -71,19 +72,19 @@ def main(fname_config):
 
         del aphi
 
-        opos, rot = offset_pos(ipos, phi_dtheta, phi_dphi, pol=True, geodesic=False) #geodesic used to be used defined.
+        opos, rot = sm.offset_pos(ipos, phi_dtheta, phi_dphi, pol=True, geodesic=False) #geodesic used to be used defined.
         del phi, phi_dtheta, phi_dphi
 
         # Interpolate maps one at a time
         maps  = []
         for comp in cmb:
-            for m in taylor_interpol_iter(comp, opos, 3, verbose=False, lmax=None): #lmax here needs to be fixed. order of taylor expansion is fixed to 3.
+            for m in sm.taylor_interpol_iter(comp, opos, 3, verbose=False, lmax=None): #lmax here needs to be fixed. order of taylor expansion is fixed to 3.
                 pass
             maps.append(m)
         del opos, cmb
 
         # save the map computed for future reference.
-        rm = apply_rotation(maps, rot)
+        rm = sm.apply_rotation(maps, rot)
     else:
         # option to use an already-computed lensed cmb map.
 
@@ -92,8 +93,8 @@ def main(fname_config):
         rm = np.array([i for i in CMB.lensed_cmb])
 
     if out.debug is True:
-        map_cmb = rm[:, np.newaxis, :] * scale_freqs(CMB, out)
+        map_cmb = rm[:, np.newaxis, :] * sm.scale_freqs(CMB, out)
         for i in range(len(out.output_frequency)):
             hp.write_map(out.output_dir + out.output_prefix + 'lensed_cmb_%d'%(out.output_frequency[i]) + '_' + str(out.nside) + '.fits', map_cmb[:, i, :], coord='G', column_units=out.output_units)
 
-    return rm[:, np.newaxis, :] * scale_freqs(CMB, out)
+    return rm[:, np.newaxis, :] * sm.scale_freqs(CMB, out)
